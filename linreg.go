@@ -1,41 +1,15 @@
-package main
+package linreg
 
 import (
-	"fmt"
 	"math"
+	"sync"
+	"fmt"
 )
 
 type ComputeCostFunction func(x []float64, y []float64, w float64, b float64) float64 
 type ComputeGradientFunction func(x []float64, y []float64, w float64, b float64) (float64, float64)
 
-func main() {
-
-	features := []float64{1.0, 2.0}
-	targets := []float64{300.0, 500.0}
-
-	
-	// w_final, b_final, J_hist, p_hist := gradient_descent(features, targets, 0, 0, 0.001, 1000, compute_cost, compute_gradient)
-	
-	// fmt.Printf("w_final: %f\n", w_final)
-	// fmt.Printf("b_final: %f\n", b_final)
-	// fmt.Printf("J_hist: %f\n", J_hist)
-	// fmt.Printf("p_hist: %f\n", p_hist)
-
-	gradient_descent(features, targets, 0, 0, 0.001, 1000, compute_cost, compute_gradient)
-
-}
-
-func sigmoid(z float64) float64 {
-	g := 1/(1 + math.Exp(-z))
-	return g
-}
-
-// Single variable linear regression
-func f_wb(i float64, w float64, b float64) float64 {
-	return (w * i) + b
-}
-
-func gradient_descent(x []float64, y []float64, w_init float64, b_init float64, alpha float64, num_iterations int, cost_function ComputeCostFunction, gradient_function ComputeGradientFunction) (float64, float64, []float64, [][]float64){
+func GradientDescent(x []float64, y []float64, w_init float64, b_init float64, alpha float64, num_iterations int) (float64, float64, []float64, [][]float64){
     // Performs gradient descent to fit w,b. Updates w,b by taking 
     // num_iters gradient steps with learning rate alpha
     
@@ -60,21 +34,14 @@ func gradient_descent(x []float64, y []float64, w_init float64, b_init float64, 
 	w := w_init
 
 	for idx := range x {
-		dj_dw, dj_db := gradient_function(x, y, b, w)
+		dj_dw, dj_db := compute_gradient(x, y, b, w)
 
 		b = b - alpha*dj_db
 		w = w - alpha*dj_dw
 
 		if idx < 1000 {
-			J_history = append(J_history, cost_function(x, y, w, b))
+			J_history = append(J_history, compute_cost(x, y, w, b))
 			parameter_history = append(parameter_history, []float64{w, b})
-
-			fmt.Printf("J_history=%p, parameter_history=%p, b=%f, w=%f\n", J_history, parameter_history, b, w)
-
-			// if (idx % num_iterations/10) == 0 {
-			// 	fmt.Printf("J_history=%p, parameter_history=%p, b=%f, w=%f", J_history, parameter_history, b, w)
-			// }
-
 		}
 	}
 	return w, b, J_history, parameter_history
@@ -130,6 +97,47 @@ func compute_gradient(x []float64, y []float64, w float64, b float64) (float64, 
 	return dj_w, dj_b
 }
 
+func sigmoid(z float64) float64 {
+	g := 1/(1 + math.Exp(-z))
+	return g
+}
+
+func dot(v1 []float64, v2 []float64) []float64 {
+	product := make([]float64, len(v1));
+	var wg sync.WaitGroup
+	wg.Add(1)
+	for idx, _ := range v1 {
+		go func(){
+			fmt.Printf("%d\n", idx)
+			product[idx] = v1[idx]*v2[idx]
+		}()
+	}
+	wg.Done()
+	wg.Wait()
+	return product
+}
+
+func multiply(num1 float64, num2 float64) float64 {
+	return num1 * num2
+}
+
+func slowDot(v1 []float64, v2 []float64) []float64 {
+	dotProduct := make([]float64, 0)
+	for idx, _ := range v1 {
+		dotProduct = append(dotProduct, v1[idx]*v2[idx])
+	}
+	return dotProduct
+}
+
 func square[T int | float64](num T) T {
 	return num * num
+}
+
+func insert(slice []float64, index int, value float64) []float64 {
+    if len(slice) == index { // nil or empty slice or after last element
+        return append(slice, value)
+    }
+    slice = append(slice[:index+1], slice[index:]...) // index < len(a)
+    slice[index] = value
+    return slice
 }
