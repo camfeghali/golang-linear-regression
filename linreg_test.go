@@ -2,25 +2,27 @@ package linreg
 
 import (
 	"fmt"
+	"math/rand"
 	"testing"
 	"time"
-	"math/rand"
+
 	"github.com/stretchr/testify/assert"
 )
 
-var v1 []float64 = randFloats(1.0, 100.0, 1000000)
-var v2 []float64 = randFloats(1.0, 100.0, 1000000)
 
 func TestDot(t *testing.T) {
-		assert := assert.New(t)
+	var v1 []float64 = randFloats(1.0, 100.0, 1000000)
+	var v2 []float64 = randFloats(1.0, 100.0, 1000000)
 
-		start := time.Now()
-		result := dot(v1, v2)
- 		elapsed := time.Since(start)
-    fmt.Printf("dot took %s", elapsed)
+	assert := assert.New(t)
 
-		assert.Equal(v1[2]*v2[2], result[2], "");
-		assert.Equal(v1[4]*v2[4], result[4], "");
+	start := time.Now()
+	result, _ := dotProduct(v1, v2)
+	elapsed := time.Since(start)
+	fmt.Printf("dot took %s", elapsed)
+
+	assert.Equal(v1[2]*v2[2], result[2], "");
+	assert.Equal(v1[4]*v2[4], result[4], "");
 }
 
 func randFloats(min, max float64, n int) []float64 {
@@ -31,17 +33,6 @@ func randFloats(min, max float64, n int) []float64 {
     return res
 }
 
-func TestSlowDot(t *testing.T) {
-		assert := assert.New(t)
-
-		start := time.Now()
-		result := slowDot(v1, v2)
- 		elapsed := time.Since(start)
-    fmt.Printf("Slow dot took %s", elapsed)
-
-		assert.Equal(v1[2]*v2[2], result[2], "");
-		assert.Equal(v1[4]*v2[4], result[4], "");
-}
 
 func TestSquare(t *testing.T) {
 		assert := assert.New(t)

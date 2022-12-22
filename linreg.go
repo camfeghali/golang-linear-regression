@@ -1,9 +1,8 @@
 package linreg
 
 import (
-	"math"
-	"sync"
 	"fmt"
+	"math"
 )
 
 type ComputeCostFunction func(x []float64, y []float64, w float64, b float64) float64 
@@ -102,31 +101,19 @@ func sigmoid(z float64) float64 {
 	return g
 }
 
-func dot(v1 []float64, v2 []float64) []float64 {
-	product := make([]float64, len(v1));
-	var wg sync.WaitGroup
-	wg.Add(1)
-	for idx, _ := range v1 {
-		go func(){
-			fmt.Printf("%d\n", idx)
-			product[idx] = v1[idx]*v2[idx]
-		}()
-	}
-	wg.Done()
-	wg.Wait()
-	return product
-}
-
 func multiply(num1 float64, num2 float64) float64 {
 	return num1 * num2
 }
 
-func slowDot(v1 []float64, v2 []float64) []float64 {
+func dotProduct(v1 []float64, v2 []float64) ([]float64, error) {
+	if len(v1) != len(v2) {
+		return nil, fmt.Errorf("x and y have unequal lengths: %d / %d", len(v1), len(v2))
+	}
 	dotProduct := make([]float64, 0)
 	for idx, _ := range v1 {
 		dotProduct = append(dotProduct, v1[idx]*v2[idx])
 	}
-	return dotProduct
+	return dotProduct, nil
 }
 
 func square[T int | float64](num T) T {
