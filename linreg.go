@@ -5,10 +5,21 @@ import (
 	"math"
 )
 
-type ComputeCostFunction func(x []float64, y []float64, w float64, b float64) float64 
-type ComputeGradientFunction func(x []float64, y []float64, w float64, b float64) (float64, float64)
+func MultiVarPrediction(x, w []float64, b float64) float64 {
+	dotProduct, _ := dotProduct(w, x)
+	total_sum := reduce(dotProduct, func(acc, current float64) float64 {
+        return acc + current
+    }, 0)
+	prediction := total_sum + b
+	return prediction
+}
 
-func GradientDescent(x []float64, y []float64, w_init float64, b_init float64, alpha float64, num_iterations int) (float64, float64, []float64, [][]float64){
+func SingleVarPrediction(x, w, b float64) float64 {
+	return w*x + b
+}
+
+
+func SingleVarGradientDescent(x, y []float64, w_init, b_init, alpha float64, num_iterations int) (float64, float64, []float64, [][]float64){
     // Performs gradient descent to fit w,b. Updates w,b by taking 
     // num_iters gradient steps with learning rate alpha
     
@@ -33,21 +44,26 @@ func GradientDescent(x []float64, y []float64, w_init float64, b_init float64, a
 	w := w_init
 
 	for idx := range x {
-		dj_dw, dj_db := compute_gradient(x, y, b, w)
+		dj_dw, dj_db := compute_gradient_single_var(x, y, b, w)
 
 		b = b - alpha*dj_db
 		w = w - alpha*dj_dw
 
 		if idx < 1000 {
-			J_history = append(J_history, compute_cost(x, y, w, b))
+			J_history = append(J_history, compute_cost_single_var(x, y, w, b))
 			parameter_history = append(parameter_history, []float64{w, b})
 		}
 	}
 	return w, b, J_history, parameter_history
 }
 
+// func compute_cost_multi_var(w, x[][]float64, y[]float64, b float64) float64 {
+// 	m := float64(len(x))
+// 	cost_sum := 0.0
+// }
+
 // Mean Square Error Cost Function
-func compute_cost(x []float64, y []float64, w float64, b float64) float64 {
+func compute_cost_single_var(x, y []float64, w, b float64) float64 {
     //	Computes the cost function for linear regression.
     //	Args:
     //  	x: Data, m examples 
@@ -68,7 +84,7 @@ func compute_cost(x []float64, y []float64, w float64, b float64) float64 {
 		return total_cost
 }
 
-func compute_gradient(x []float64, y []float64, w float64, b float64) (float64, float64) {
+func compute_gradient_single_var(x []float64, y []float64, w float64, b float64) (float64, float64) {
     // Computes the gradient for linear regression 
     // Args:
     //   x: Data, m examples 
@@ -96,16 +112,7 @@ func compute_gradient(x []float64, y []float64, w float64, b float64) (float64, 
 	return dj_w, dj_b
 }
 
-func sigmoid(z float64) float64 {
-	g := 1/(1 + math.Exp(-z))
-	return g
-}
-
-func multiply(num1 float64, num2 float64) float64 {
-	return num1 * num2
-}
-
-func dotProduct(v1 []float64, v2 []float64) ([]float64, error) {
+func dotProduct(v1, v2 []float64) ([]float64, error) {
 	if len(v1) != len(v2) {
 		return nil, fmt.Errorf("x and y have unequal lengths: %d / %d", len(v1), len(v2))
 	}
@@ -120,11 +127,15 @@ func square[T int | float64](num T) T {
 	return num * num
 }
 
-func insert(slice []float64, index int, value float64) []float64 {
-    if len(slice) == index { // nil or empty slice or after last element
-        return append(slice, value)
+func sigmoid(z float64) float64 {
+	g := 1/(1 + math.Exp(-z))
+	return g
+}
+
+func reduce[T, M any](s []T, f func(M, T) M, initValue M) M {
+    acc := initValue
+    for _, v := range s {
+        acc = f(acc, v)
     }
-    slice = append(slice[:index+1], slice[index:]...) // index < len(a)
-    slice[index] = value
-    return slice
+    return acc
 }
