@@ -5,6 +5,33 @@ import (
 	"math"
 )
 
+type LinearRegression struct {
+	W float64
+	B float64
+}
+
+
+func (model *LinearRegression) Train(features, targets []float64) (float64, float64, []float64, [][]float64) {
+	// w_init: 0, 
+	// b_init: 0, 
+	// alpha: 0.001, 
+	// num_iterations: 1000
+	w_final, b_final, J_hist, p_hist := SingleVarGradientDescent(features, targets, 0, 0, 0.001, 1000)
+
+	model.W = w_final
+	model.B = b_final
+
+	return w_final, b_final, J_hist, p_hist
+}
+
+func (model *LinearRegression) GetParameters()(float64, float64) {
+	return model.W, model.B
+}
+
+func (model *LinearRegression) Predict(x float64) float64 {
+	return SingleVarPrediction(x, model.W, model.B)
+}
+
 func MultiVarPrediction(x, w []float64, b float64) float64 {
 	dotProduct, _ := dotProduct(w, x)
 	total_sum := reduce(dotProduct, func(acc, current float64) float64 {
