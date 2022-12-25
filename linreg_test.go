@@ -2,12 +2,26 @@ package linreg
 
 import (
 	"fmt"
-	"math/rand"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
 )
+
+func TestTrainAndPredictMultiVar(t *testing.T) {
+	assert := assert.New(t)
+
+	x_train := [][]float64 {{2104.0, 5.0, 1.0, 45.0}, {1416.0, 3.0, 2.0, 40.0}, {852.0, 2.0, 1.0, 35.0}}
+	y_train := []float64 {460.0, 232.0, 178.0}
+
+	model := &MultiVarLinearRegression{}
+
+	model.Train(x_train, y_train)
+
+	prediction := model.Predict([]float64{2104.0, 5.0, 1.0, 45.0})
+
+	assert.Equal(426.18530497189204, prediction, "");
+}
 
 func TestGradientDescent(t *testing.T) {
 	assert := assert.New(t)
@@ -19,10 +33,28 @@ func TestGradientDescent(t *testing.T) {
 	iterations := 10000
 	tmp_alpha := 0.01
 
-	w_final, b_final, _, _ := single_var_gradient_descent(x_train, y_train, w_init, b_init, tmp_alpha, iterations)
+	w_final, b_final, _, _ := gradient_descent_single_var(x_train, y_train, w_init, b_init, tmp_alpha, iterations)
 
 	assert.Equal(199.99285075131766, w_final, "");
 	assert.Equal(100.011567727362, b_final, "");
+}
+
+func TestGradientDescentMultiVar(t *testing.T) {
+	assert := assert.New(t)
+
+	x_train := [][]float64 {{2104.0, 5.0, 1.0, 45.0}, {1416.0, 3.0, 2.0, 40.0}, {852.0, 2.0, 1.0, 35.0}}
+	y_train := []float64 {460.0, 232.0, 178.0}
+
+	w_init := []float64 { 0.0, 0.0, 0.0, 0.0 }
+	b_init := 0.0
+
+	iterations := 1000
+	alpha := 5.0e-7
+
+	w_final, b_final, _ := gradient_descent_multi_var(x_train, y_train, w_init, b_init, alpha, iterations)
+
+	assert.Equal([]float64{0.20396568731883127, 0.0037491922098285375, -0.011248703878978786, -0.06586139992373717}, w_final, "");
+	assert.Equal(-0.002235407530932535, b_final, "");
 }
 
 func TestComputeGradient (t *testing.T) {
@@ -120,19 +152,34 @@ func TestDot(t *testing.T) {
 	assert := assert.New(t)
 
 	start := time.Now()
-	result := dotProduct(v1, v2)
+	result := dot_product(v1, v2)
 	elapsed := time.Since(start)
 	fmt.Printf("dot took %s", elapsed)
 
 	assert.Equal(56.0, result, "");
 }
 
-func randFloats(min, max float64, n int) []float64 {
-    res := make([]float64, n)
-    for i := range res {
-        res[i] = min + rand.Float64() * (max - min)
-    }
-    return res
+func TestMultiplyVector(t *testing.T) {
+	assert := assert.New(t)
+
+	initial_vector := []float64{-4.83e+05, -1.12e+03, -3.67e+02, -1.21e+04}
+
+	new_vector := mapFunc(initial_vector, func(vector_value float64) float64 {
+		return vector_value * 5.0e-7
+	})
+
+	assert.Equal(new_vector, []float64{-2.415e-01, -5.6e-04, -1.835e-04, -6.05e-03}, "");
+}
+
+func TestSubtractVector(t *testing.T) {
+	assert := assert.New(t)
+
+	v1 := []float64{2.02e-01, 4.85e-04, 9.45e-05, 4.68e-03}
+	v2 := []float64{6.40e-05, -3.14e-06, 1.15e-05,  7.42e-05}
+
+	new_vector := subtract_vectors(v1, v2)
+
+	assert.Equal(new_vector, []float64{0.201936, 0.00048814, 8.300000000000001e-05, 0.0046058}, "");
 }
 
 func TestSquare(t *testing.T) {

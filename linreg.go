@@ -15,11 +15,12 @@ type MultiVarLinearRegression struct {
 }
 
 func (model *LinearRegression) Train(features, targets []float64) (float64, float64, []float64, [][]float64) {
-	// w_init: 0, 
-	// b_init: 0, 
-	// alpha: 0.001, 
-	// num_iterations: 1000
-	w_final, b_final, J_hist, p_hist := single_var_gradient_descent(features, targets, 0, 0, 0.01, 10000)
+	w_init := 0.0
+	b_init := 0.0
+	alpha := 0.001
+	num_iterations := 10000
+
+	w_final, b_final, J_hist, p_hist := gradient_descent_single_var(features, targets, w_init, b_init, alpha, num_iterations)
 
 	model.W = w_final
 	model.B = b_final
@@ -27,11 +28,33 @@ func (model *LinearRegression) Train(features, targets []float64) (float64, floa
 	return w_final, b_final, J_hist, p_hist
 }
 
+func (model *MultiVarLinearRegression) Train(features [][]float64, targets []float64) ([]float64, float64, []float64) {
+	w_init := make([]float64, len(features[0]))
+	b_init := 0.0
+	alpha := 5.0e-7
+	num_iterations := 1000
+	
+	w_final, b_final, J_hist := gradient_descent_multi_var(features, targets, w_init, b_init, alpha, num_iterations)
+
+	model.W = w_final
+	model.B = b_final
+
+	return w_final, b_final, J_hist
+}
+
 func (model *LinearRegression) Predict(x float64) float64 {
 	return model.W*x + model.B
 }
 
+func (model *MultiVarLinearRegression) Predict(x []float64) float64 {
+	return dot_product(model.W, x) + model.B
+}
+
 func (model *LinearRegression) GetParameters()(float64, float64) {
+	return model.W, model.B
+}
+
+func (model *MultiVarLinearRegression) GetParameters()([]float64, float64) {
 	return model.W, model.B
 }
 
@@ -53,14 +76,14 @@ func compute_cost_multi_var(x [][]float64, y []float64, w []float64, b float64) 
 	cost := 0.0
 
 	for idx, _ := range x {
-		f_wb := dotProduct(x[idx], w) + b
+		f_wb := dot_product(x[idx], w) + b
 		cost = square(f_wb - y[idx]) + cost
 	}
 	total_cost := cost / (2*m)
 	return total_cost
 }
 
-func single_var_gradient_descent(x, y []float64, w_init, b_init, alpha float64, num_iterations int) (float64, float64, []float64, [][]float64) {
+func gradient_descent_single_var(x, y []float64, w_init, b_init, alpha float64, num_iterations int) (float64, float64, []float64, [][]float64) {
 	J_history := make([]float64, 0)
 	parameter_history := make([][]float64, 0)
 	b := b_init
@@ -78,6 +101,26 @@ func single_var_gradient_descent(x, y []float64, w_init, b_init, alpha float64, 
 		}
 	}
 	return w, b, J_history, parameter_history
+}
+
+func gradient_descent_multi_var(x [][]float64, y, w_init []float64, b_init float64, alpha float64, num_iterations int) ([]float64, float64, []float64) {
+	J_history := make([]float64, 0)
+	w := w_init
+	b := b_init
+
+	for i := 0; i < num_iterations; i ++ {
+		dj_dw, dj_db := compute_gradient_multi_var(x, y, w, b)
+		
+		alpha_product := multiply_vector(dj_dw, alpha)
+
+		w = subtract_vectors(w, alpha_product)
+		b = b - alpha * dj_db
+
+		cost := compute_cost_multi_var(x, y, w, b)
+		J_history = append(J_history, cost)
+	}
+
+	return w, b, J_history
 }
 
 func compute_gradient_single_var(x []float64, y []float64, w float64, b float64) (float64, float64) {
@@ -117,7 +160,7 @@ func compute_gradient_multi_var(x [][]float64, y, w []float64, b float64) ([]flo
 	dj_db := 0.0
 
 	for i, row := range x {
-		err := (dotProduct(row, w) + b) - y[i]
+		err := (dot_product(row, w) + b) - y[i]
 		for j := range w {
 			dj_dw[j] = dj_dw[j] + err * row[j]
 		}
@@ -132,7 +175,7 @@ func compute_gradient_multi_var(x [][]float64, y, w []float64, b float64) ([]flo
 	return dj_dw, dj_db
 }
 
-func dotProduct(v1, v2 []float64) (float64) {
+func dot_product(v1, v2 []float64) (float64) {
 	dotProduct := make([]float64, 0)
 	for idx, _ := range v1 {
 		dotProduct = append(dotProduct, v1[idx]*v2[idx])
@@ -145,8 +188,19 @@ func dotProduct(v1, v2 []float64) (float64) {
 	return result
 }
 
+func multiply_vector(vector []float64, multiplier float64) []float64 {
+	return mapFunc(vector, func(vector_value float64) float64 {
+			return vector_value * multiplier
+		})
+}
 
-
+func subtract_vectors(v1, v2 []float64) []float64 {
+	new_vector := make([]float64, 0)
+	for i := 0; i < len(v1); i++ {
+		new_vector = append(new_vector, v1[i] - v2[i])
+	}
+	return new_vector
+}
 
 
 
