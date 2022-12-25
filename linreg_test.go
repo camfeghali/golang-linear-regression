@@ -23,12 +23,11 @@ func TestGradientDescent(t *testing.T) {
 
 	assert.Equal(199.99285075131766, w_final, "");
 	assert.Equal(100.011567727362, b_final, "");
-
 }
 
 func TestComputeGradient (t *testing.T) {
 	assert := assert.New(t)
-	// x: [1. 2.], y: [300. 500.], w: 0, b: 0, dj_dw: -650.0, dj_db: -400.0
+
 	var x_train = []float64{1.0, 2.0}
 	var y_train = []float64{300.0, 500.0}
 
@@ -52,6 +51,19 @@ func TestComputeGradient (t *testing.T) {
 	assert.Equal(0.0008444703713337276, dj_db, "");
 }
 
+func TestComputeGradientMultiVar (t *testing.T) {
+	assert := assert.New(t)
+	x_train := [][]float64 {{2104.0, 5.0, 1.0, 45.0}, {1416.0, 3.0, 2.0, 40.0}, {852.0, 2.0, 1.0, 35.0}}
+	y_train := []float64 {460.0, 232.0, 178.0}
+
+	w := []float64 { 0.39133535, 18.75376741, -53.36032453, -26.42131618 }
+	b := 785.1811367994083
+
+	dj_dw, dj_db := compute_gradient_multi_var(x_train, y_train, w, b)
+	assert.Equal([]float64{-0.0027262357719640327, -6.271972627776752e-06, -2.217455782253334e-06, -6.92403390682254e-05}, dj_dw, "");
+	assert.Equal(-1.6739251501955248e-06, dj_db, "");
+}
+
 func TestCostFunction(t *testing.T) {
 	assert := assert.New(t)
 
@@ -65,7 +77,7 @@ func TestCostFunction(t *testing.T) {
 	assert.Equal(125.0, cost, "");
 }
 
-func TestMultiVarCostFunction(t *testing.T) {
+func TestCostFunctionMultiVar(t *testing.T) {
 	assert := assert.New(t)
 
 	x_train := [][]float64 {{2104.0, 5.0, 1.0, 45.0}, {1416.0, 3.0, 2.0, 40.0}, {852.0, 2.0, 1.0, 35.0}}

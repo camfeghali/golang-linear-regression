@@ -1,7 +1,6 @@
 package linreg
 
 import (
-	// "fmt"
 	"math"
 )
 
@@ -47,6 +46,18 @@ func compute_cost_single_var(x, y []float64, w, b float64) float64 {
 		}
 		total_cost := (1/(2*m)) * cost_sum
 		return total_cost
+}
+
+func compute_cost_multi_var(x [][]float64, y []float64, w []float64, b float64) float64 {
+	m := float64(len(x))
+	cost := 0.0
+
+	for idx, _ := range x {
+		f_wb := dotProduct(x[idx], w) + b
+		cost = square(f_wb - y[idx]) + cost
+	}
+	total_cost := cost / (2*m)
+	return total_cost
 }
 
 func single_var_gradient_descent(x, y []float64, w_init, b_init, alpha float64, num_iterations int) (float64, float64, []float64, [][]float64) {
@@ -97,17 +108,28 @@ func compute_gradient_single_var(x []float64, y []float64, w float64, b float64)
 	return dj_w, dj_b
 }
 
+func compute_gradient_multi_var(x [][]float64, y, w []float64, b float64) ([]float64, float64) {
+	m := len(x)
+	feature_count := len(x[0])
 
-func compute_cost_multi_var(x [][]float64, y []float64, w []float64, b float64) float64 {
-	m := float64(len(x))
-	cost := 0.0
 
-	for idx, _ := range x {
-		f_wb := dotProduct(x[idx], w) + b
-		cost = square(f_wb - y[idx]) + cost
+	dj_dw := make([]float64, feature_count)
+	dj_db := 0.0
+
+	for i, row := range x {
+		err := (dotProduct(row, w) + b) - y[i]
+		for j := range w {
+			dj_dw[j] = dj_dw[j] + err * row[j]
+		}
+		dj_db = dj_db + err
 	}
-	total_cost := cost / (2*m)
-	return total_cost
+	dj_dw = mapFunc(dj_dw, func(derivative float64) float64 {
+		return derivative / float64(m)
+	})
+		
+	dj_db = dj_db / float64(m)
+
+	return dj_dw, dj_db
 }
 
 func dotProduct(v1, v2 []float64) (float64) {
@@ -178,6 +200,16 @@ func reduce[T, M any](s []T, f func(M, T) M, initValue M) M {
         acc = f(acc, v)
     }
     return acc
+}
+
+func mapFunc[T, R any](slice []T, f func(T) R) []R {
+	new_slice := make([]R, 0)
+
+	for _, value := range slice {
+		new_slice = append(new_slice, f(value))
+	}
+
+	return new_slice
 }
 
 func calcMean(sample []float64) float64 {
