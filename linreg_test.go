@@ -19,7 +19,7 @@ func TestGradientDescent(t *testing.T) {
 	iterations := 10000
 	tmp_alpha := 0.01
 
-	w_final, b_final, _, _ := SingleVarGradientDescent(x_train, y_train, w_init, b_init, tmp_alpha, iterations)
+	w_final, b_final, _, _ := single_var_gradient_descent(x_train, y_train, w_init, b_init, tmp_alpha, iterations)
 
 	assert.Equal(199.99285075131766, w_final, "");
 	assert.Equal(100.011567727362, b_final, "");
@@ -65,6 +65,19 @@ func TestCostFunction(t *testing.T) {
 	assert.Equal(125.0, cost, "");
 }
 
+func TestMultiVarCostFunction(t *testing.T) {
+	assert := assert.New(t)
+
+	x_train := [][]float64 {{2104.0, 5.0, 1.0, 45.0}, {1416.0, 3.0, 2.0, 40.0}, {852.0, 2.0, 1.0, 35.0}}
+	y_train := []float64 {460.0, 232.0, 178.0}
+
+	b := 785.1811367994083
+	w := []float64 { 0.39133535, 18.75376741, -53.36032453, -26.42131618 }
+
+	cost := compute_cost_multi_var(x_train, y_train, w, b)
+	assert.Equal(1.5578904428966628e-12, cost, "");
+}
+
 func TestCalcStdDev(t *testing.T) {
 	assert := assert.New(t)
 
@@ -80,7 +93,6 @@ func TestCalcStdDev(t *testing.T) {
 	assert.Equal(23.692474191889147, result2, "");
 }
 
-
 func TestCalcMean(t *testing.T) {
 	var sample = []float64{66.0, 30.0, 40.0, 64.0}
 
@@ -89,20 +101,18 @@ func TestCalcMean(t *testing.T) {
 	assert.Equal(50.0, result, "");
 }
 
-
 func TestDot(t *testing.T) {
-	var v1 []float64 = randFloats(1.0, 100.0, 1000000)
-	var v2 []float64 = randFloats(1.0, 100.0, 1000000)
+	var v1 []float64 = []float64 {2, 4, 6}
+	var v2 []float64 = []float64 {2, 4, 6}
 
 	assert := assert.New(t)
 
 	start := time.Now()
-	result, _ := dotProduct(v1, v2)
+	result := dotProduct(v1, v2)
 	elapsed := time.Since(start)
 	fmt.Printf("dot took %s", elapsed)
 
-	assert.Equal(v1[2]*v2[2], result[2], "");
-	assert.Equal(v1[4]*v2[4], result[4], "");
+	assert.Equal(56.0, result, "");
 }
 
 func randFloats(min, max float64, n int) []float64 {
@@ -112,7 +122,6 @@ func randFloats(min, max float64, n int) []float64 {
     }
     return res
 }
-
 
 func TestSquare(t *testing.T) {
 		assert := assert.New(t)

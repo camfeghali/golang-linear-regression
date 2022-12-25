@@ -1,7 +1,7 @@
 package linreg
 
 import (
-	"fmt"
+	// "fmt"
 	"math"
 )
 
@@ -10,13 +10,17 @@ type LinearRegression struct {
 	B float64
 }
 
+type MultiVarLinearRegression struct {
+	W []float64
+	B float64
+}
 
 func (model *LinearRegression) Train(features, targets []float64) (float64, float64, []float64, [][]float64) {
 	// w_init: 0, 
 	// b_init: 0, 
 	// alpha: 0.001, 
 	// num_iterations: 1000
-	w_final, b_final, J_hist, p_hist := SingleVarGradientDescent(features, targets, 0, 0, 0.01, 10000)
+	w_final, b_final, J_hist, p_hist := single_var_gradient_descent(features, targets, 0, 0, 0.01, 10000)
 
 	model.W = w_final
 	model.B = b_final
@@ -24,27 +28,15 @@ func (model *LinearRegression) Train(features, targets []float64) (float64, floa
 	return w_final, b_final, J_hist, p_hist
 }
 
+func (model *LinearRegression) Predict(x float64) float64 {
+	return model.W*x + model.B
+}
+
 func (model *LinearRegression) GetParameters()(float64, float64) {
 	return model.W, model.B
 }
 
-func (model *LinearRegression) Predict(x float64) float64 {
-	return SingleVarPrediction(x, model.W, model.B)
-}
-
-func SingleVarPrediction(x, w, b float64) float64 {
-	return w*x + b
-}
-
 func compute_cost_single_var(x, y []float64, w, b float64) float64 {
-    //	Computes the cost function for linear regression.
-    //	Args:
-    //  	x: Data, m examples 
-    //  	y: target values
-    //  	w,b: model parameters  
-    //	Returns
-    //		total_cost: The cost of using w,b as the parameters for linear regression
-    //    to fit the data points in x and y
 		m := float64(len(x))
 		cost_sum := 0.0
 		
@@ -57,8 +49,7 @@ func compute_cost_single_var(x, y []float64, w, b float64) float64 {
 		return total_cost
 }
 
-
-func SingleVarGradientDescent(x, y []float64, w_init, b_init, alpha float64, num_iterations int) (float64, float64, []float64, [][]float64) {
+func single_var_gradient_descent(x, y []float64, w_init, b_init, alpha float64, num_iterations int) (float64, float64, []float64, [][]float64) {
 	J_history := make([]float64, 0)
 	parameter_history := make([][]float64, 0)
 	b := b_init
@@ -77,8 +68,6 @@ func SingleVarGradientDescent(x, y []float64, w_init, b_init, alpha float64, num
 	}
 	return w, b, J_history, parameter_history
 }
-
-// Mean Square Error Cost Function
 
 func compute_gradient_single_var(x []float64, y []float64, w float64, b float64) (float64, float64) {
     // Computes the gradient for linear regression 
@@ -109,54 +98,69 @@ func compute_gradient_single_var(x []float64, y []float64, w float64, b float64)
 }
 
 
+func compute_cost_multi_var(x [][]float64, y []float64, w []float64, b float64) float64 {
+	m := float64(len(x))
+	cost := 0.0
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-func MultiVarPrediction(x, w []float64, b float64) float64 {
-	dotProduct, _ := dotProduct(w, x)
-	total_sum := reduce(dotProduct, func(acc, current float64) float64 {
-        return acc + current
-    }, 0)
-	prediction := total_sum + b
-	return prediction
+	for idx, _ := range x {
+		f_wb := dotProduct(x[idx], w) + b
+		cost = square(f_wb - y[idx]) + cost
+	}
+	total_cost := cost / (2*m)
+	return total_cost
 }
 
-func dotProduct(v1, v2 []float64) ([]float64, error) {
-	if len(v1) != len(v2) {
-		return nil, fmt.Errorf("x and y have unequal lengths: %d / %d", len(v1), len(v2))
-	}
+func dotProduct(v1, v2 []float64) (float64) {
 	dotProduct := make([]float64, 0)
 	for idx, _ := range v1 {
 		dotProduct = append(dotProduct, v1[idx]*v2[idx])
 	}
-	return dotProduct, nil
+
+	result := reduce(dotProduct, func(acc, current float64) float64 {
+        return acc + current
+    }, 0)
+
+	return result
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+func ZScoreNormalize(Xs []float64) []float64 {
+	mean := calcMean(Xs)
+
+	std := calcStdDev(Xs, mean)
+
+	return func(Xs []float64) []float64 {
+		var normalized []float64
+		for _, value := range Xs {
+			normalized = append(normalized, (value - mean) / std)
+		}
+		return normalized
+	}(Xs)
 }
 
 func square[T int | float64](num T) T {
@@ -176,20 +180,6 @@ func reduce[T, M any](s []T, f func(M, T) M, initValue M) M {
     return acc
 }
 
-func ZScoreNormalize(Xs []float64) []float64 {
-	mean := calcMean(Xs)
-
-	std := calcStdDev(Xs, mean)
-
-	return func(Xs []float64) []float64 {
-		var normalized []float64
-		for _, value := range Xs {
-			normalized = append(normalized, (value - mean) / std)
-		}
-		return normalized
-	}(Xs)
-}
-
 func calcMean(sample []float64) float64 {
 		sum := 0.0
 		for _, value := range sample {
@@ -204,8 +194,6 @@ func calcStdDev(sample []float64, mean float64) float64 {
 			value = square(math.Abs(value - mean))
 			sum = sum + value
 		}
-
 		variance := sum / float64(len(sample) - 1)
-
 		return math.Sqrt(variance)
 }
