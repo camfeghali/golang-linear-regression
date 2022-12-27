@@ -1,6 +1,7 @@
 package linreg
 
 import (
+	"fmt"
 	"math"
 )
 
@@ -28,13 +29,13 @@ func (model *LinearRegression) Train(features, targets []float64) (float64, floa
 	return w_final, b_final, J_hist, p_hist
 }
 
-func (model *MultiVarLinearRegression) Train(features [][]float64, targets []float64) ([]float64, float64, []float64) {
+func (model *MultiVarLinearRegression) Train(features [][]float64, targets []float64, alpha float64, num_iterations int) ([]float64, float64, []float64) {
 	w_init := make([]float64, len(features[0]))
 	b_init := 0.0
-	alpha := 5.0e-7
-	num_iterations := 1000
 	
 	w_final, b_final, J_hist := gradient_descent_multi_var(features, targets, w_init, b_init, alpha, num_iterations)
+
+	fmt.Printf("b_final: %f\n", b_final)
 
 	model.W = w_final
 	model.B = b_final
@@ -202,41 +203,51 @@ func subtract_vectors(v1, v2 []float64) []float64 {
 	return new_vector
 }
 
+func divide_vectors(v1, v2 []float64) []float64 {
+	new_vector := make([]float64, 0)
+	for i := 0; i < len(v1); i++ {
+		new_vector = append(new_vector, v1[i] / v2[i])
+	}
+	return new_vector
+}
 
+func ZScoreNormalize(features []float64, means []float64, sigmas[]float64) []float64 {
+	return divide_vectors(subtract_vectors(features, means), sigmas)
+}
 
+func ZScoreNormalizeDataset(dataset [][]float64) ([][]float64, []float64, []float64) {
+	var means, sigmas []float64
 
+	feature_count := len(dataset[0])
+	normalized_dataset := make([][]float64, len(dataset))
 
+	// populate empty normalized dataset with empty arrays of length equal to feature count
+	for idx, _ := range normalized_dataset {
+		normalized_dataset[idx] = make([]float64, feature_count)
+	}
 
+	for column_index := 0; column_index < feature_count; column_index++ {
+		column := pick_column(dataset, column_index)
+		mean := calcMean(column)
+		sigma := calcStdDev(column, mean)
 
+		means = append(means, mean)
+		sigmas = append(sigmas, sigma)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-func ZScoreNormalize(Xs []float64) []float64 {
-	mean := calcMean(Xs)
-
-	std := calcStdDev(Xs, mean)
-
-	return func(Xs []float64) []float64 {
-		var normalized []float64
-		for _, value := range Xs {
-			normalized = append(normalized, (value - mean) / std)
+		for row_index, row := range dataset {
+			value := row[column_index]		
+			normalized_dataset[row_index][column_index] = (value - mean) / sigma
 		}
-		return normalized
-	}(Xs)
+	}
+	return normalized_dataset, means, sigmas
+}
+
+func pick_column(dataset [][]float64, column_index int) []float64 {
+	column := []float64{}
+	for _, row := range dataset {
+		column = append(column, row[column_index])
+	}
+	return column
 }
 
 func square[T int | float64](num T) T {
@@ -258,11 +269,9 @@ func reduce[T, M any](s []T, f func(M, T) M, initValue M) M {
 
 func mapFunc[T, R any](slice []T, f func(T) R) []R {
 	new_slice := make([]R, 0)
-
 	for _, value := range slice {
 		new_slice = append(new_slice, f(value))
 	}
-
 	return new_slice
 }
 
